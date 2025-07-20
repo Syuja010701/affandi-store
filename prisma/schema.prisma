@@ -14,19 +14,74 @@ datasource db {
 }
 
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
-}
-
-model Post {
   id        Int      @id @default(autoincrement())
+  username  String   @unique
+  name      String
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  Int?
-  author    User?    @relation(fields: [authorId], references: [id])
+}
+
+model JenisProduk {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model KategoriUmur {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id         Int      @id @default(autoincrement())
+  barcode    String   @unique
+  nama       String
+  jenisId    Int
+  kategoriId Int
+  ukuran     String
+  hargaJual  Decimal
+  hargaBeli  Decimal
+  stok       Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  jenis        JenisProduk  @relation(fields: [jenisId], references: [id])
+  kategoriUmur KategoriUmur @relation(fields: [kategoriId], references: [id])
+  transaksi    Transaksi[]
+}
+
+model Transaksi {
+  id          Int      @id @default(autoincrement())
+  productId   Int
+  jumlah      Int
+  hargaSatuan Decimal
+  date        DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  name        String
+  jumlah      Int
+  hargaSatuan Decimal
+  totalHarga  Decimal
+  keterangan  String?
+  date        DateTime @default(now())
+}
+
+model ReportDaily {
+  id                     Int      @id @default(autoincrement())
+  total_item_transaction Int
+  total_uang_transaction Decimal
+  total_uang_kasir       Decimal
+  date                   DateTime @default(now())
 }
