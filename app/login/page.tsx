@@ -4,6 +4,7 @@
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { Button } from "flowbite-react";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
@@ -90,14 +91,9 @@ export default function LoginPage() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700"
-        >
-          {loading ? 'Loading' : 'Login'} 
-          
-        </button>
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "Loading" : "Login"}
+        </Button>
       </form>
     </div>
   );

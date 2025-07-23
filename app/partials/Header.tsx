@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { initFlowbite } from "flowbite";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default function Header() {
   const [darkMode, setDarkMode] = useState(false);
@@ -56,7 +57,7 @@ export default function Header() {
                   ></path>
                 </svg>
               </button>
-              <a href="https://flowbite.com" className="flex ms-2 md:me-24">
+              <Link href="/" className="flex ms-2 md:me-24">
                 <Image
                   src="/images/logo/logo.png"
                   className="h-8 me-3"
@@ -64,10 +65,10 @@ export default function Header() {
                   height={50}
                   alt="Affandi Store"
                 />
-                <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white">
+                <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap dark:text-white text-gray-900">
                   Affandi Store
                 </span>
-              </a>
+              </Link>
             </div>
             <div className="flex items-center">
               <div className="flex items-center ms-3">
@@ -93,7 +94,7 @@ export default function Header() {
                       className="rounded-full"
                       width={32}
                       height={32}
-                      src="/images/logo/logo.png"
+                      src="/images/logo/userLogo.png"
                       alt="user photo"
                     />
                   </button>
@@ -121,7 +122,7 @@ export default function Header() {
                     <li>
                       <button
                         onClick={() => signOut({ callbackUrl: "/login" })}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200"
+                        className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200"
                       >
                         Sign out
                       </button>
