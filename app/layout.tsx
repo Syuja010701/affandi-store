@@ -1,10 +1,12 @@
 // app/layout.tsx
-import "./globals.css";
-import Header from "./Header";
+import { ThemeModeScript } from 'flowbite-react';
+import './globals.css';
+import LayoutWrapper from './partials/LayoutWrapper';
+import SessionProviderWrapper from './partials/sessionProvider';
 
 export const metadata = {
-  title: "Superblog",
-  description: "A blog app using Next.js and Prisma",
+  title: 'Affandi Store',
+  description: 'Nego sampai jadi',
 };
 
 export default function RootLayout({
@@ -13,12 +15,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className="h-full overflow-hidden">
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
+    <html suppressHydrationWarning>
+      <head>
+        <ThemeModeScript />
+      </head>
+      <body className="dark:bg-gray-900 bg-white">
+      <SessionProviderWrapper>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </SessionProviderWrapper>
       </body>
     </html>
   );
