@@ -1,14 +1,18 @@
 // app/components/LayoutWrapper.tsx
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import Header from '../partials/Header';
-import Sidebar from '../partials/sidebar';
+import { usePathname } from "next/navigation";
+import Header from "../partials/Header";
+import Sidebar from "../partials/sidebar";
 
-export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
+export default function LayoutWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
 
-  if (pathname === '/login') {
+  if (pathname === "/login") {
     return <>{children}</>;
   }
 
