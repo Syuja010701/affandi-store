@@ -1,4 +1,3 @@
-// app/components/LayoutWrapper.tsx
 "use client";
 
 import { usePathname } from "next/navigation";
@@ -12,9 +11,13 @@ export default function LayoutWrapper({
 }) {
   const pathname = usePathname();
 
-  if (pathname === "/login") {
-    return <>{children}</>;
-  }
+const isAuthPage = pathname === "/login";
+const isPrintPage = pathname.startsWith("/produk/print");
+
+if (isAuthPage || isPrintPage) {
+  return <>{children}</>;
+}
+
 
   return (
     <>
