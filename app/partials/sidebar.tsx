@@ -1,6 +1,7 @@
 "use client";
 
 import { initFlowbite } from "flowbite";
+import { ArrowsRepeat } from "flowbite-react-icons/outline";
 import { ChartPie, Cube, Tag, User, UsersGroup } from "flowbite-react-icons/solid";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -15,6 +16,8 @@ export default function Sidebar() {
     { path: `/jenis-produk`, icon: <Tag />, name: "Jenis Produk" },
     { path: `/kategori-umur`, icon: <UsersGroup />, name: "Kategori Umur" },
     { path: `/produk`, icon: <Cube />, name: "Produk" },
+    // { path: `/transaksi`, icon: <ArrowsRepeat />, name: "Transaksi" },
+
 
   ];
   return (

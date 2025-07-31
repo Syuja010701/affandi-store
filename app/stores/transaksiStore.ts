@@ -1,0 +1,106 @@
+import { create } from "zustand";
+interface Transaksi {
+  id: number;
+  productId: number;
+  jumlah: number;
+  hargaSatuan: number;
+  date?: string;
+  product?: {
+    id: number;
+    nama: string;
+    stock: number;
+    kategoriId: number;
+    kategoriUmur?: {
+      id: number;
+      name: string;
+      createdAt?: string;
+      updatedAt?: string;
+    };
+    jenisId: number;
+    jenis: {
+      id: number;
+      name: string;
+      createdAt?: string;
+      updatedAt?: string;
+    };
+  };
+}
+
+interface TransaksiState {
+  items: Transaksi[];
+  isLoading: boolean;
+
+  fetchItems: () => Promise<void>;
+  addItem: (payload: Omit<Transaksi, "id">) => Promise<void>;
+  updateItem: (
+    id: number,
+    patch: Partial<Omit<Transaksi, "id">>
+  ) => Promise<void>;
+  deleteItem: (id: number) => Promise<void>;
+}
+
+export const useTransaksiStore = create<TransaksiState>((set) => ({
+  items: [],
+  isLoading: false,
+
+  fetchItems: async () => {
+    set({ isLoading: true });
+    try {
+      const res = await fetch("/api/transaksi");
+      const data: Transaksi[] = await res.json();
+      set({ items: data });
+    } catch (err) {
+      console.error("Failed to fetch transaksi", err);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  addItem: async (payload) => {
+    set({ isLoading: true });
+    try {
+      const res = await fetch("/api/transaksi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const created: Transaksi = await res.json();
+      set((state) => ({ items: [created, ...state.items] }));
+    } catch (err) {
+      console.error("Failed to add transaksi", err);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  updateItem: async (id, patch) => {
+    set({ isLoading: true });
+    try {
+      const res = await fetch(`/api/transaksi/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const updated: Transaksi = await res.json();
+      set((state) => ({
+        items: state.items.map((t) => (t.id === id ? updated : t)),
+      }));
+    } catch (err) {
+      console.error("Failed to update transaksi", err);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteItem: async (id) => {
+    set({ isLoading: true });
+    try {
+      await fetch(`/api/transaksi/${id}`, { method: "DELETE" });
+      set((state) => ({ items: state.items.filter((t) => t.id !== id) }));
+    } catch (err) {
+      console.error("Failed to delete transaksi", err);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+}));

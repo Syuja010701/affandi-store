@@ -60,7 +60,7 @@ export default function ProductPage() {
   }, []);
   /* filter */
   const filtered = items
-    .filter((p) => p.nama.toLowerCase().includes(search.toLowerCase()))
+    .filter((p) => p.nama?.toLowerCase().includes(search.toLowerCase()))
     .filter((p) => (jenisFilter ? p.jenisId === Number(jenisFilter) : true))
     .filter((p) =>
       kategoriFilter ? p.kategoriId === Number(kategoriFilter) : true
@@ -187,6 +187,7 @@ export default function ProductPage() {
 
             <BaseSelect
               value={jenisFilter}
+              id="filterJenis"
               onChange={(e) => setJenisFilter(e.target.value)}
             >
               <option value="">Semua Jenis</option>
@@ -198,6 +199,7 @@ export default function ProductPage() {
             </BaseSelect>
 
             <BaseSelect
+              id="filterKategori"
               value={kategoriFilter}
               onChange={(e) => setKategoriFilter(e.target.value)}
             >
