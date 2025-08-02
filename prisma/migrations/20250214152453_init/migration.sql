@@ -82,3 +82,6 @@ CREATE TABLE
         "updatedAt" TIMESTAMP(3) NOT NULL,
         CONSTRAINT "ReportDaily_pkey" PRIMARY KEY ("id")
     );
+
+ALTER TABLE "Transaksi"
+ADD COLUMN "diskon" DECIMAL NOT NULL DEFAULT 0;

@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { productId, jumlah, hargaSatuan } = body;
+    const { productId, jumlah, hargaSatuan, date, diskon } = body;
 
     if (!productId || jumlah <= 0 || !hargaSatuan) {
       return NextResponse.json(
@@ -56,12 +56,15 @@ export async function POST(req: NextRequest) {
       data: {
         productId: Number(productId),
         jumlah: Number(jumlah),
+        diskon: diskon ? Number(diskon) : 0,
         hargaSatuan: Number(hargaSatuan),
+        date: date ? new Date(date) : new Date(),
       },
     });
 
     return NextResponse.json(transaksi, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error("POST /api/transaksi error:", err);
     return NextResponse.json({ error: "Transaksi gagal" }, { status: 500 });
   }
 }

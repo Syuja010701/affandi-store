@@ -4,6 +4,7 @@ interface Transaksi {
   productId: number;
   jumlah: number;
   hargaSatuan: number;
+  diskon?: number;
   date?: string;
   product?: {
     id: number;
@@ -39,7 +40,7 @@ interface TransaksiState {
   deleteItem: (id: number) => Promise<void>;
 }
 
-export const useTransaksiStore = create<TransaksiState>((set) => ({
+export const useTransaksiStore = create<TransaksiState>((set, get) => ({
   items: [],
   isLoading: false,
 
@@ -66,6 +67,7 @@ export const useTransaksiStore = create<TransaksiState>((set) => ({
       });
       const created: Transaksi = await res.json();
       set((state) => ({ items: [created, ...state.items] }));
+      get().fetchItems();
     } catch (err) {
       console.error("Failed to add transaksi", err);
     } finally {
@@ -85,6 +87,7 @@ export const useTransaksiStore = create<TransaksiState>((set) => ({
       set((state) => ({
         items: state.items.map((t) => (t.id === id ? updated : t)),
       }));
+      get().fetchItems();
     } catch (err) {
       console.error("Failed to update transaksi", err);
     } finally {
@@ -97,6 +100,7 @@ export const useTransaksiStore = create<TransaksiState>((set) => ({
     try {
       await fetch(`/api/transaksi/${id}`, { method: "DELETE" });
       set((state) => ({ items: state.items.filter((t) => t.id !== id) }));
+      get().fetchItems();
     } catch (err) {
       console.error("Failed to delete transaksi", err);
     } finally {

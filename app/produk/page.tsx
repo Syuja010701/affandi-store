@@ -270,6 +270,7 @@ export default function ProductPage() {
                 onChange={(e) => setUkuran(e.target.value)}
               />
               <BaseInputCurrency
+                id="hargaJual"
                 label="Harga Jual"
                 value={hargaJual}
                 onChange={(raw) => setHargaJual(raw)}
@@ -278,6 +279,7 @@ export default function ProductPage() {
               {/* Harga Beli */}
               <BaseInputCurrency
                 label="Harga Beli"
+                id="hargaBeli"
                 value={hargaBeli}
                 onChange={(raw) => setHargaBeli(raw)}
               />

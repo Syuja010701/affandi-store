@@ -6,7 +6,11 @@ interface TitleContentProps {
   onClick?: () => void;
 }
 
-export default function TitleContent({ title, contentButton, onClick }: TitleContentProps) {
+export default function TitleContent({
+  title,
+  contentButton,
+  onClick,
+}: TitleContentProps) {
   return (
     <div className="flex justify-between items-center mb-4">
       <h1 className="text-xl font-bold dark:text-white text-gray-900">

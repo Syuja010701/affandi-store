@@ -34,7 +34,7 @@ export async function PUT(
 ) {
   try {
     const id = Number((await params).id);
-    const { jumlah: newJumlah, hargaSatuan } = await req.json();
+    const { jumlah: newJumlah, hargaSatuan, date, diskon } = await req.json();
 
     // 1. ambil transaksi lama
     const oldTx = await prisma.transaksi.findUnique({
@@ -66,6 +66,8 @@ export async function PUT(
       where: { id },
       data: {
         jumlah: newJumlah,
+        diskon: diskon ? diskon : 0,
+        date: date ? new Date(date) : new Date(),
         hargaSatuan: hargaSatuan ? Number(hargaSatuan) : undefined,
       },
     });
