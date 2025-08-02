@@ -1,7 +1,7 @@
 "use client";
 
 import { initFlowbite } from "flowbite";
-import { ArrowsRepeat } from "flowbite-react-icons/outline";
+import { ArrowsRepeat, Expand } from "flowbite-react-icons/outline";
 import {
   ChartPie,
   Cube,
@@ -27,6 +27,7 @@ export default function Sidebar() {
     { path: "/kategori-umur", icon: <UsersGroup />, name: "Kategori Umur" },
     { path: "/produk", icon: <Cube />, name: "Produk" },
     { path: "/transaksi", icon: <ArrowsRepeat />, name: "Transaksi" },
+    { path: "/expense", icon: <Expand />, name: "Expanses" },
   ];
 
   return (
