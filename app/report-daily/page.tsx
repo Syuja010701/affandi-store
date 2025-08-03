@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import TitleContent from "../components/contents/title";
-import { useExpenseStore } from "../stores/expenseStore";
+import { useReportDailyStore } from "../stores/reportDailyStore";
 import BaseTable from "../components/table/BaseTable";
 import FilterLayout from "../components/contents/filterLayout";
 import BaseInput from "../components/input/BaseInput";
@@ -11,49 +11,48 @@ import BaseInputCurrency from "../components/input/BaseInputCurrency";
 import { formatDateToYMD, formatTanggalIndonesia } from "@/lib/formatDate";
 import { formatRupiah } from "@/lib/currency";
 import DatePicker from "../components/input/DatePicker";
-import BaseTextarea from "../components/input/BaseTextArea";
 
-export default function ProductPage() {
+export default function ReportDailyPage() {
   const {
-    expenses,
-    fetchExpenses,
-    addExpense,
-    updateExpense,
-    deleteExpense,
+    reports,
+    fetchReports,
+    addReport,
+    updateReport,
+    deleteReport,
     isLoading: loadingExpense,
-  } = useExpenseStore();
+  } = useReportDailyStore();
 
   /* ------------------ state ------------------ */
-  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const [open, setOpen] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [id, setId] = useState<number | null>(null);
 
   /* form fields */
-  const [name, setName] = useState("");
-  const [jumlah, setJumlah] = useState(0);
-  const [hargaSatuan, setHargaSatuan] = useState("");
-  const [keterangan, setKeterangan] = useState("");
+  const [total_item_transaction, set_total_item_transaction] = useState(0);
+  const [total_uang_kasir, set_total_uang_kasir] = useState("");
+  const [total_uang_transaction, set_uang_transaction] = useState("");
   const [date, setDate] = useState("");
 
   /* initial fetch */
   useEffect(() => {
-    fetchExpenses();
+    fetchReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* filter */
-  const filtered = expenses.filter((p) =>
-    p.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = reports.filter((t) => {
+    if (!filterDate) return true;
+    const recordDay = formatDateToYMD(new Date(t?.date ?? ""));
+    return recordDay === filterDate;
+  });
 
   /* reset form */
   const resetForm = () => {
     setId(null);
-    setName("");
-
-    setHargaSatuan("");
-    setKeterangan("");
+    set_total_item_transaction(0);
+    set_total_uang_kasir("");
+    set_uang_transaction("");
     setDate("");
     setOpen(false);
   };
@@ -68,54 +67,49 @@ export default function ProductPage() {
   /* open modal untuk edit */
   const handleEdit = (row: any) => {
     setId(row.id);
-    setName(row.name);
-
-    setHargaSatuan(String(row.hargaSatuan));
-    setKeterangan(String(row.keterangan));
-    setTitleModal(`Edit Expense ${row.name}`);
-    setDate(formatDateToYMD(new Date(row.date)));
+    set_total_uang_kasir(String(row.total_uang_kasir));
+    set_uang_transaction(String(row.total_uang_transaction));
+    set_total_item_transaction(row.total_item_transaction);
+    setDate(row.date);
     setOpen(true);
   };
 
   /* simpan (add / update) */
   const handleSave = async () => {
     const payload = {
-      name,
-      jumlah: Number(jumlah),
-      totalHarga: Number(hargaSatuan) * Number(jumlah),
-      hargaSatuan: Number(hargaSatuan),
-      keterangan: String(keterangan),
+      total_item_transaction: Number(total_item_transaction),
+      total_uang_kasir: Number(total_uang_kasir),
+      total_uang_transaction: Number(total_uang_transaction),
       date,
     };
 
     if (id) {
-      await updateExpense(id, payload);
+      await updateReport(id, payload);
     } else {
-      await addExpense(payload);
+      await addReport(payload);
     }
     resetForm();
-    await fetchExpenses();
+    await fetchReports();
   };
 
   /* hapus */
   const handleRemove = (id: number) => {
-    if (confirm("Hapus Expense ini?")) deleteExpense(id);
+    if (confirm("Hapus Report ini?")) deleteReport(id);
   };
 
   /* ------------------ kolom tabel ------------------ */
   const columns = [
-    { key: "name", header: "Nama" },
-    { key: "jumlah", header: "Jumlah" },
-    { key: "hargaSatuan", header: "Harga Satuan" },
-    { key: "totalHarga", header: "Total Harga" },
+    { key: "total_item_transaction", header: "Total Item Terjual" },
+    { key: "total_uang_transaction", header: "Total Uang Tercatat" },
+    { key: "total_uang_kasir", header: "Total Uang Kasir" },
     { key: "date", header: "Tanggal" },
-    { key: "keterangan", header: "Keterangan" },
     { key: "action", header: "Action" },
   ];
   const data = filtered.map((p) => ({
-    ...p,
-    hargaSatuan: `Rp ${formatRupiah(p.hargaSatuan ?? 0)}`,
-    totalHarga: `Rp ${formatRupiah(p.totalHarga)}`,
+    total_item_transaction: p.total_item_transaction,
+    total_uang_transaction: `Rp ${formatRupiah(p.total_uang_transaction ?? 0)}`,
+    total_uang_kasir: `Rp ${formatRupiah(p.total_uang_kasir ?? 0)}`,
+
     date: formatTanggalIndonesia(p.date ?? ""),
     action: (
       <div className="flex gap-2">
@@ -139,8 +133,8 @@ export default function ProductPage() {
   return (
     <>
       <TitleContent
-        title="Expenses"
-        contentButton="Tambah Expense Baru"
+        title="Report Daily"
+        contentButton="Tambah Report Baru"
         onClick={handleAdd}
       />
 
@@ -149,12 +143,14 @@ export default function ProductPage() {
       ) : (
         <>
           <FilterLayout>
-            <BaseInput
-              type="search"
-              id="search"
-              placeholder="Cari name Expense"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+            <DatePicker
+              id="filter-date"
+              placeholder="Pilih Tanggal"
+              mode="single"
+              defaultDate={undefined}
+              onChange={(_dates, currentDateString) =>
+                setFilterDate(currentDateString || "")
+              }
             />
           </FilterLayout>
 
@@ -170,7 +166,10 @@ export default function ProductPage() {
               label: loadingExpense ? "Loading..." : "Simpan",
               onClick: handleSave,
               disableButton:
-                loadingExpense || !name.trim() || !jumlah || !hargaSatuan,
+                loadingExpense ||
+                !total_uang_transaction ||
+                !total_item_transaction ||
+                !total_uang_kasir,
             }}
             secondaryAction={{
               label: "Batal",
@@ -180,37 +179,26 @@ export default function ProductPage() {
           >
             <div className="grid gap-4">
               <BaseInput
-                label="Nama"
-                value={name}
-                placeholder="Masukkan name Expense"
-                onChange={(e) => setName(e.target.value)}
-              />
-
-              <BaseInput
-                label="Jumlah"
+                label="Total Item Terjual"
                 type="number"
-                placeholder="Masukkan jumlah"
-                value={jumlah}
-                onChange={(e) => setJumlah(Number(e.target.value))}
+                placeholder="Masukkan total_item_transaction"
+                value={total_item_transaction}
+                onChange={(e) =>
+                  set_total_item_transaction(Number(e.target.value))
+                }
+              />
+              <BaseInputCurrency
+                label="Total Uang Tercatat"
+                id="total_uang_tercatat"
+                value={total_uang_transaction}
+                onChange={(raw) => set_uang_transaction(raw)}
               />
 
               <BaseInputCurrency
-                label="Harga Satuan"
-                id="hargaSatuan"
-                value={hargaSatuan}
-                onChange={(raw) => setHargaSatuan(raw)}
-              />
-
-              <BaseInput
-                label="Harga Total"
-                value={
-                  !hargaSatuan || !jumlah
-                    ? "Rp 0"
-                    : `Rp ${formatRupiah(
-                        Number(hargaSatuan.replace(/\D/g, "")) * jumlah
-                      )}`
-                }
-                readOnly
+                label="Total Uang Kasir"
+                id="total_uang_kasir"
+                value={total_uang_kasir}
+                onChange={(raw) => set_total_uang_kasir(raw)}
               />
 
               <DatePicker
@@ -222,14 +210,6 @@ export default function ProductPage() {
                 onChange={(_dates, currentDateString) =>
                   setDate(currentDateString || "")
                 }
-              />
-
-              <BaseTextarea
-                label="Catatan"
-                placeholder="Tulis catatan di sini..."
-                value={keterangan}
-                onChange={(e) => setKeterangan(e.target.value)}
-                helperText="maksimal 250 karakter"
               />
             </div>
           </BaseModal>

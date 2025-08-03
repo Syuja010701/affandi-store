@@ -4,6 +4,7 @@ import { initFlowbite } from "flowbite";
 import { ArrowsRepeat, Expand } from "flowbite-react-icons/outline";
 import {
   ChartPie,
+  ClipboardCheck,
   Cube,
   Tag,
   User,
@@ -28,6 +29,8 @@ export default function Sidebar() {
     { path: "/produk", icon: <Cube />, name: "Produk" },
     { path: "/transaksi", icon: <ArrowsRepeat />, name: "Transaksi" },
     { path: "/expense", icon: <Expand />, name: "Expanses" },
+    { path: "/report-daily", icon: <ClipboardCheck />, name: "Report Daily" },
+
   ];
 
   return (
