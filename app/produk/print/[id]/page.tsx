@@ -35,7 +35,7 @@ export default function PrintPage() {
   return (
     <div className="m-0 flex flex-col items-center justify-center bg-white print:m-0">
       <SVG
-        text={`produk/print/${item.id}`}
+        text={`${item.barcode}`}
         options={{
           margin: 2,
           width: 200,
