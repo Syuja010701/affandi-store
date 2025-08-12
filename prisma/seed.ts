@@ -6,45 +6,68 @@ const prisma = new PrismaClient();
 async function main() {
   const hashedPassword = await bcrypt.hash("password", 10);
 
+  // Hapus data lama biar bersih
+  await prisma.productVariant.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.jenisProduk.deleteMany();
+  await prisma.kategoriUmur.deleteMany();
+  await prisma.user.deleteMany();
+
+  // Jenis Produk
   await prisma.jenisProduk.createMany({
     data: [
-      {
-        name: "SEPATU",
-      },
+      { name: "SEPATU" },
       { name: "KOPER" },
       { name: "TAS" },
     ],
   });
 
- await prisma.kategoriUmur.createMany({
+  // Kategori Umur
+  await prisma.kategoriUmur.createMany({
     data: [
-      {
-        name: "ANAK_ANAK",
-      },
-      {
-        name: "DEWASA",
-      },
-      {
-        name: "REMAJA",
-      },
+      { name: "ANAK ANAK" },
+      { name: "DEWASA" },
+      { name: "REMAJA" },
     ],
   });
 
-  // Product
+  // Product + Variants
   await prisma.product.create({
     data: {
       barcode: "PRD123456",
       nama: "Sepatu Anak Merah",
-      jenisId: 1,
-      kategoriId: 1,
-      ukuran: "31",
+      jenisId: 1, // SEPATU
+      kategoriId: 1, // ANAK ANAK
       hargaJual: 250000,
       hargaBeli: 150000,
-      stok: 20,
+      variants: {
+        create: [
+          { ukuran: "30", stok: 5 },
+          { ukuran: "31", stok: 8 },
+          { ukuran: "32", stok: 3 },
+        ],
+      },
     },
   });
 
-  // User
+  await prisma.product.create({
+    data: {
+      barcode: "P09833497NUT",
+      nama: "Koper Hitam",
+      jenisId: 2, // KOPER
+      kategoriId: 2, // DEWASA
+      hargaJual: 1000000,
+      hargaBeli: 700000,
+      variants: {
+        create: [
+          { ukuran: "Sedang", stok: 10 },
+          { ukuran: "Besar", stok: 5 },
+        ],
+      },
+    },
+  });
+
+  // User admin
   await prisma.user.create({
     data: {
       username: "admin",
@@ -54,7 +77,6 @@ async function main() {
   });
 
   console.log("✅ Seed berhasil dijalankan!");
-  console.log("Seeding completed.");
 }
 
 main()

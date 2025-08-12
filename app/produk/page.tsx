@@ -8,7 +8,7 @@ import { useKategoriUmurStore } from "../stores/kategoriUmurStore";
 import BaseTable from "../components/table/BaseTable";
 import FilterLayout from "../components/contents/filterLayout";
 import BaseInput from "../components/input/BaseInput";
-import BaseSelect from "../components/input/BaseSelect"; // buat select jenis & kategori
+import BaseSelect from "../components/input/BaseSelect";
 import BaseModal from "../components/modal/baseModal";
 import BaseInputCurrency from "../components/input/BaseInputCurrency";
 import Link from "next/link";
@@ -32,32 +32,26 @@ export default function ProductPage() {
   const [open, setOpen] = useState(false);
   const [titleModal, setTitleModal] = useState("");
   const [id, setId] = useState<number | null>(null);
-  const [jenisFilter, setJenisFilter] = useState(""); // string id jenis
-  const [kategoriFilter, setKategoriFilter] = useState(""); // string id kategori
+  const [jenisFilter, setJenisFilter] = useState("");
+  const [kategoriFilter, setKategoriFilter] = useState("");
 
   /* form fields */
   const [nama, setNama] = useState("");
   const [jenisId, setJenisId] = useState("");
   const [kategoriId, setKategoriId] = useState("");
-  const [ukuran, setUkuran] = useState("");
   const [hargaJual, setHargaJual] = useState("");
   const [hargaBeli, setHargaBeli] = useState("");
-  const [stok, setStok] = useState("");
+  type Variant = { ukuran: string; stok: number };
+  const [variants, setVariants] = useState<Variant[]>([]);
 
   /* initial fetch */
   useEffect(() => {
     fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     fetchKategori();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => {
     fetchProduk();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   /* filter */
   const filtered = items
     .filter((p) => p.nama?.toLowerCase().includes(search.toLowerCase()))
@@ -72,44 +66,66 @@ export default function ProductPage() {
     setNama("");
     setJenisId("");
     setKategoriId("");
-    setUkuran("");
     setHargaJual("");
     setHargaBeli("");
-    setStok("");
+    setVariants([]);
     setOpen(false);
   };
 
-  /* open modal untuk tambah */
+  /* open modal tambah */
   const handleAdd = () => {
     resetForm();
     setTitleModal("Tambah Produk Baru");
     setOpen(true);
   };
 
-  /* open modal untuk edit */
+  /* open modal edit */
   const handleEdit = (row: any) => {
     setId(row.id);
     setNama(row.nama);
     setJenisId(String(row.jenisId));
     setKategoriId(String(row.kategoriId));
-    setUkuran(row.ukuran);
     setHargaJual(String(row.hargaJual));
     setHargaBeli(String(row.hargaBeli));
-    setStok(String(row.stok));
+    setVariants(
+      row.variants?.map((v: any) => ({
+        id: v.id,
+        ukuran: v.ukuran,
+        stok: v.stok,
+      })) || []
+    );
     setTitleModal(`Edit Produk ${row.nama}`);
     setOpen(true);
   };
 
-  /* simpan (add / update) */
+  /* tambah varian ke form */
+  const addVariantRow = () => {
+    setVariants([...variants, { ukuran: "", stok: 0 }]);
+  };
+
+  /* update varian */
+  const updateVariant = (
+    index: number,
+    field: keyof Variant,
+    value: string | number
+  ) => {
+    const updated = [...variants];
+    if (field === "stok") {
+      updated[index][field] = Number(value);
+    } else {
+      updated[index][field] = value as string;
+    }
+    setVariants(updated);
+  };
+  /* simpan */
   const handleSave = async () => {
     const payload = {
       nama,
       jenisId: Number(jenisId),
       kategoriId: Number(kategoriId),
-      ukuran,
       hargaJual: Number(hargaJual),
       hargaBeli: Number(hargaBeli),
-      stok: Number(stok),
+      variants,
     };
 
     if (id) {
@@ -126,14 +142,13 @@ export default function ProductPage() {
     if (confirm("Hapus produk ini?")) deleteItem(id);
   };
 
-  /* ------------------ kolom tabel ------------------ */
+  /* ------------------ tabel ------------------ */
   const columns = [
     { key: "nama", header: "Nama" },
     { key: "jenis", header: "Jenis" },
     { key: "kategoriUmur", header: "Kategori Umur" },
-    { key: "ukuran", header: "Ukuran" },
+    { key: "varian", header: "Ukuran & Stok" },
     { key: "hargaJual", header: "Harga Jual" },
-    { key: "stok", header: "Stok" },
     { key: "action", header: "Action" },
   ];
 
@@ -142,6 +157,7 @@ export default function ProductPage() {
     jenis: p.jenis?.name ?? "-",
     kategoriUmur: p.kategoriUmur?.name ?? "-",
     hargaJual: `Rp${Number(p.hargaJual).toLocaleString()}`,
+    varian: p.variants?.map((v) => `${v.ukuran} (${v.stok})`).join(", ") || "-",
     action: (
       <div className="flex gap-2">
         <button
@@ -179,15 +195,14 @@ export default function ProductPage() {
           <FilterLayout>
             <BaseInput
               type="search"
-              id="search"
               placeholder="Cari nama produk"
+              id="searchProduk"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
             <BaseSelect
               value={jenisFilter}
-              id="filterJenis"
+              id="jenisFilter"
               onChange={(e) => setJenisFilter(e.target.value)}
             >
               <option value="">Semua Jenis</option>
@@ -197,11 +212,10 @@ export default function ProductPage() {
                 </option>
               ))}
             </BaseSelect>
-
             <BaseSelect
-              id="filterKategori"
               value={kategoriFilter}
               onChange={(e) => setKategoriFilter(e.target.value)}
+              id="kategoriFilter"
             >
               <option value="">Semua Kategori Umur</option>
               {kategoriItems.map((k) => (
@@ -214,7 +228,6 @@ export default function ProductPage() {
 
           <BaseTable columns={columns} data={data} />
 
-          {/* Modal Add / Edit */}
           <BaseModal
             open={open}
             onClose={() => setOpen(false)}
@@ -236,12 +249,13 @@ export default function ProductPage() {
               <BaseInput
                 label="Nama Produk"
                 value={nama}
-                placeholder="Masukkan nama produk"
+                id="namaProduk"
                 onChange={(e) => setNama(e.target.value)}
               />
               <BaseSelect
                 label="Jenis Barang"
                 value={jenisId}
+                id="jenisId"
                 onChange={(e) => setJenisId(e.target.value)}
               >
                 <option value="">Pilih Jenis Barang</option>
@@ -253,6 +267,7 @@ export default function ProductPage() {
               </BaseSelect>
               <BaseSelect
                 label="Kategori Umur"
+                id="kategoriId"
                 value={kategoriId}
                 onChange={(e) => setKategoriId(e.target.value)}
               >
@@ -263,33 +278,66 @@ export default function ProductPage() {
                   </option>
                 ))}
               </BaseSelect>
-              <BaseInput
-                label="Ukuran"
-                placeholder="Masukkan ukuran"
-                value={ukuran}
-                onChange={(e) => setUkuran(e.target.value)}
-              />
               <BaseInputCurrency
                 id="hargaJual"
                 label="Harga Jual"
                 value={hargaJual}
                 onChange={(raw) => setHargaJual(raw)}
               />
-
-              {/* Harga Beli */}
               <BaseInputCurrency
-                label="Harga Beli"
                 id="hargaBeli"
+                label="Harga Beli"
                 value={hargaBeli}
                 onChange={(raw) => setHargaBeli(raw)}
               />
-              <BaseInput
-                label="Stok"
-                type="number"
-                placeholder="Masukkan jumlah stock"
-                value={stok}
-                onChange={(e) => setStok(e.target.value)}
-              />
+
+              {/* Varian ukuran & stok */}
+              <div className="border rounded p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-semibold">Varian</h4>
+                  <button
+                    type="button"
+                    className="text-sm text-blue-600"
+                    onClick={addVariantRow}
+                  >
+                    + Tambah Varian
+                  </button>
+                </div>
+                {variants.map((v, idx) => (
+                  <div key={idx} className="grid grid-cols-2 gap-2 mb-2">
+                    <BaseInput
+                      placeholder="Ukuran"
+                      label="Ukuran"
+                      value={v.ukuran}
+                      id={`ukuran-${idx}`}
+                      onChange={(e) =>
+                        updateVariant(idx, "ukuran", e.target.value)
+                      }
+                    />
+                    <BaseInput
+                      type="number"
+                      placeholder="Stok"
+                      label="Stok"
+                      id={`stok-${idx}`}
+                      value={v.stok}
+                      onChange={(e) =>
+                        updateVariant(idx, "stok", e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="text-red-600 hover:underline self-end"
+                      onClick={() => {
+                        const updated = [...variants];
+                        updated.splice(idx, 1);
+                        setVariants(updated);
+                      }}
+                    >
+                      Hapus Varian
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </BaseModal>
         </>
