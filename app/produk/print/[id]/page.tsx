@@ -1,6 +1,7 @@
 "use client";
 
 import { useProductStore } from "@/app/stores/produkStore";
+import { formatRupiah } from "@/lib/currency";
 import { useQRCode } from "next-qrcode";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
@@ -44,9 +45,9 @@ export default function PrintPage() {
       />
       <div className="mt-2 text-center text-sm text-black">
         <p className="font-bold">{item.nama}</p>
-        <p>Ukuran: {item.ukuran || "-"}</p>
         <p>Jenis: {item.jenis?.name || "-"}</p>
         <p>Kategori: {item.kategoriUmur?.name || "-"}</p>
+        <p>Harga:{formatRupiah(item.hargaJual)}</p>
       </div>
     </div>
   );

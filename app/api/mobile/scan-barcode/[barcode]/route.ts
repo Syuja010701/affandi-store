@@ -1,33 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+export const dynamic = "force-dynamic";
+
+const parseBarcode = async (params: Promise<{ barcode: string }>) => {
+  const barcode = (await params).barcode;
+  if (!barcode) throw new Error("Invalid barcode");
+  return barcode;
+};
 
 export async function GET(
   _: NextRequest,
-  { params }: { params: { barcode: string } }
+  context: { params: Promise<{ barcode: string }> }
 ) {
   try {
-    const { barcode } = params;
-    console.log('Received barcode:', barcode);
-
-    if (!barcode) {
-      return NextResponse.json({ error: 'Barcode is required' }, { status: 400 });
-    }
+    const barcode = await parseBarcode(context.params);
 
     const item = await prisma.product.findUnique({
       where: { barcode },
       include: {
         jenis: true,
+        variants: true,
         kategoriUmur: true,
       },
     });
 
     if (!item) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     return NextResponse.json(item);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Invalid barcode" }, { status: 400 });
   }
 }
