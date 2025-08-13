@@ -1,28 +1,32 @@
 import { create } from "zustand";
 interface Transaksi {
   id: number;
-  productId: number;
+  variantId: number;
   jumlah: number;
-  hargaSatuan: number;
-  diskon?: number;
+  hargaSatuan: number | string;
+  diskon?: number | string;
   date?: string;
-  product?: {
+  productVariant?: {
     id: number;
-    nama: string;
-    stock: number;
-    kategoriId: number;
-    kategoriUmur?: {
+    productId: number;
+    ukuran: string;
+    stok: number;
+    product?: {
       id: number;
-      name: string;
-      createdAt?: string;
-      updatedAt?: string;
-    };
-    jenisId: number;
-    jenis: {
-      id: number;
-      name: string;
-      createdAt?: string;
-      updatedAt?: string;
+      nama: string;
+      barcode?: string;
+      hargaJual: number | string;
+      hargaBeli: number | string;
+      jenisId: number;
+      kategoriId: number;
+      jenis?: {
+        id: number;
+        name: string;
+      };
+      kategoriUmur?: {
+        id: number;
+        name: string;
+      };
     };
   };
 }

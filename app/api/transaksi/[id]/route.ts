@@ -18,7 +18,11 @@ export async function GET(
     const id = await parseId(params);
     const item = await prisma.transaksi.findUnique({
       where: { id },
-      include: { product: true },
+      include: { productVariant: 
+        {
+          include: { product: true }
+        }
+       },
     });
     if (!item)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -33,76 +37,83 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number((await params).id);
+    const id = await parseId(params);
     const { jumlah: newJumlah, hargaSatuan, date, diskon } = await req.json();
 
-    // 1. ambil transaksi lama
+    // Ambil transaksi lama
     const oldTx = await prisma.transaksi.findUnique({
       where: { id },
-      select: { jumlah: true, productId: true },
+      select: { jumlah: true, variantId: true }
     });
+
     if (!oldTx)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const delta = newJumlah - oldTx.jumlah;
 
-    // 2. cek & update stok
-    const product = await prisma.product.update({
-      where: { id: oldTx.productId },
-      data: { stok: { decrement: delta } },
+    // Update stok varian sesuai perubahan jumlah
+    const variant = await prisma.productVariant.update({
+      where: { id: oldTx.variantId },
+      data: { stok: { decrement: delta } }
     });
 
-    if (product.stok < 0) {
-      // rollback stok
-      await prisma.product.update({
-        where: { id: oldTx.productId },
-        data: { stok: { increment: delta } },
+    if (variant.stok < 0) {
+      // rollback stok kalau minus
+      await prisma.productVariant.update({
+        where: { id: oldTx.variantId },
+        data: { stok: { increment: delta } }
       });
       return NextResponse.json({ error: "Stok tidak cukup" }, { status: 400 });
     }
 
-    // 3. update transaksi
+    // Update transaksi
     const updated = await prisma.transaksi.update({
       where: { id },
       data: {
         jumlah: newJumlah,
-        diskon: diskon ? diskon : 0,
+        diskon: diskon ?? 0,
         date: date ? new Date(date) : new Date(),
-        hargaSatuan: hargaSatuan ? Number(hargaSatuan) : undefined,
-      },
+        hargaSatuan: hargaSatuan ? Number(hargaSatuan) : undefined
+      }
     });
 
     return NextResponse.json(updated);
-  } catch {
+  } catch (err) {
+    console.error("PUT /api/transaksi error:", err);
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 }
+
 
 export async function DELETE(
   _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number((await params).id);
+    const id = await parseId(params);
 
-    // 1. ambil data lama
+    // Ambil data transaksi
     const tx = await prisma.transaksi.findUnique({
       where: { id },
-      select: { jumlah: true, productId: true },
-    });
-    if (!tx) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-    // 2. kembalikan stok
-    await prisma.product.update({
-      where: { id: tx.productId },
-      data: { stok: { increment: tx.jumlah } },
+      select: { jumlah: true, variantId: true }
     });
 
-    // 3. hapus transaksi
+    if (!tx)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    // Kembalikan stok varian
+    await prisma.productVariant.update({
+      where: { id: tx.variantId },
+      data: { stok: { increment: tx.jumlah } }
+    });
+
+    // Hapus transaksi
     await prisma.transaksi.delete({ where: { id } });
 
     return NextResponse.json({ message: "Deleted" });
-  } catch {
+  } catch (err) {
+    console.error("DELETE /api/transaksi error:", err);
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }
+

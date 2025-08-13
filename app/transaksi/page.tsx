@@ -30,12 +30,12 @@ export default function TransaksiPage() {
 
   const handleExportExcel = () => {
     const rows = filtered.map((t) => ({
-      Produk: t.product?.nama ?? "-",
-      Jenis: t.product?.jenis.name ?? "-",
-      Kategori: t.product?.kategoriUmur?.name ?? "-",
+      Produk: t.productVariant?.product?.nama ?? "-",
+      Jenis: t.productVariant?.product?.jenis?.name ?? "-",
+      Kategori: t.productVariant?.product?.kategoriUmur?.name ?? "-",
       Jumlah: t.jumlah,
       "Harga Satuan": t.hargaSatuan,
-      Total: t.jumlah * t.hargaSatuan - (t.diskon ?? 0),
+      Total: t.jumlah * Number(t.hargaSatuan) - (Number(t.diskon) ?? 0),
       Diskon: t.diskon ?? 0,
       Tanggal: formatTanggalIndonesia(t.date ?? "-"),
     }));
@@ -81,6 +81,7 @@ export default function TransaksiPage() {
 
   /* form fields */
   const [produkId, setProdukId] = useState("");
+  const [produkVariantId, setProdukVariantId] = useState("");
   const [jumlah, setJumlah] = useState(1);
   const [hargaSatuan, setHargaSatuan] = useState("");
   const [diskon, setDiskon] = useState("");
@@ -99,13 +100,19 @@ export default function TransaksiPage() {
   const filtered = useMemo(() => {
     return items
       .filter((t) =>
-        t.product?.nama.toLowerCase().includes(search.toLowerCase())
+        t.productVariant?.product?.nama
+          .toLowerCase()
+          .includes(search.toLowerCase())
       )
       .filter((t) =>
-        jenisFilter ? t.product?.jenisId === Number(jenisFilter) : true
+        jenisFilter
+          ? t.productVariant?.product?.jenisId === Number(jenisFilter)
+          : true
       )
       .filter((t) =>
-        kategoriFilter ? t.product?.kategoriId === Number(kategoriFilter) : true
+        kategoriFilter
+          ? t.productVariant?.product?.kategoriId === Number(kategoriFilter)
+          : true
       )
       .filter((t) => {
         if (!filterDate) return true;
@@ -132,7 +139,7 @@ export default function TransaksiPage() {
 
   const handleEdit = (row: any) => {
     setId(row.id);
-    setProdukId(String(row.productId));
+    setProdukId(String(row.variantId));
     setJumlah(row.jumlah);
     setHargaSatuan(String(row.hargaSatuan));
     setDiskon(String(row.diskon ?? ""));
@@ -151,7 +158,7 @@ export default function TransaksiPage() {
     }
 
     const payload = {
-      productId: Number(produkId),
+      variantId: Number(produkVariantId),
       jumlah,
       date,
       diskon: disc,
@@ -179,6 +186,7 @@ export default function TransaksiPage() {
     { key: "produk", header: "Produk" },
     { key: "jenis", header: "Jenis" },
     { key: "kategori", header: "Kategori" },
+    { key: "ukuran", header: "Ukuran" },
     { key: "jumlah", header: "Jumlah" },
     { key: "hargaSatuan", header: "Harga Satuan" },
     { key: "diskon", header: "Diskon" },
@@ -189,12 +197,15 @@ export default function TransaksiPage() {
 
   const data = filtered.map((t) => ({
     ...t,
-    produk: t.product?.nama ?? "-",
-    jenis: t.product?.jenis.name ?? "-",
-    kategori: t.product?.kategoriUmur?.name ?? "-",
+    produk: t.productVariant?.product?.nama ?? "-",
+    jenis: t.productVariant?.product?.jenis?.name ?? "-",
+    ukuran: t.productVariant?.ukuran ?? "-",
+    kategori: t.productVariant?.product?.kategoriUmur?.name ?? "-",
     hargaSatuan: `Rp ${formatRupiah(t.hargaSatuan)}`,
     diskon: `Rp ${formatRupiah(t.diskon ?? 0)}`,
-    total: `Rp ${formatRupiah(t.jumlah * t.hargaSatuan - (t.diskon ?? 0))}`,
+    total: `Rp ${formatRupiah(
+      t.jumlah * Number(t.hargaSatuan) - (Number(t.diskon) ?? 0)
+    )}`,
     date: formatTanggalIndonesia(t.date ?? ""),
     action: (
       <div className="flex gap-2">
@@ -302,19 +313,44 @@ export default function TransaksiPage() {
                 value={produkId}
                 onChange={(e) => {
                   setProdukId(e.target.value);
-                  const p = produkItems.find(
-                    (pr) => pr.id === Number(e.target.value)
+                  const v = produkItems.find(
+                    (vr) => vr.id === Number(e.target.value)
                   );
-                  setHargaSatuan(p ? String(p.hargaJual) : "");
+                  setHargaSatuan(v ? String(v.hargaJual ?? 0) : "");
                 }}
               >
                 <option value="">Pilih Produk</option>
-                {produkItems.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nama} - {p.jenis?.name} - {p.kategoriUmur?.name} (Stok:{" "}
-                    {p.stok})
+                {produkItems.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.nama} - {v.jenis?.name} - {v.kategoriUmur?.name}
                   </option>
                 ))}
+              </BaseSelect>
+
+              <BaseSelect
+                label="Variant Produk"
+                id="variant_produk"
+                value={produkVariantId}
+                onChange={(e) => {
+                  setProdukVariantId(e.target.value);
+                  const v = produkItems.find(
+                    (vr) => vr.id === Number(e.target.value)
+                  );
+                  setHargaSatuan(v ? String(v.hargaJual ?? 0) : "");
+                }}
+              >
+                <option value="">Variant Produk</option>
+                {produkItems
+                  .filter((v) => v.id === Number(produkId))
+                  .flatMap((v) =>
+                    v.variants?.map((vr) => (
+                      <option key={vr.id} value={vr.id}>
+                        {vr.ukuran} - {vr.stok}
+                      </option>
+                    ))
+                  )}
+                {produkItems.filter((v) => v.id === Number(produkId)).length ===
+                  0 && <option value="">Pilih produk terlebih dahulu</option>}
               </BaseSelect>
 
               <DatePicker

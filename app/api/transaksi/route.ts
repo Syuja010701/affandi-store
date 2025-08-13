@@ -7,19 +7,17 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const list = await prisma.transaksi.findMany({
     include: {
-      product: {
-        select: {
-          id: true,
-          nama: true,
-          stok: true,
-          kategoriId: true,
-          kategoriUmur: true,
-          jenis: true,
-          jenisId: true,
-        },
-      },
+      productVariant: {
+        include: { product: 
+          {
+            include: {
+              jenis: true,
+              kategoriUmur: true,
+            }
+          }
+         }
+      }
     },
-    orderBy: { id: "desc" },
   });
   return NextResponse.json(list);
 }
@@ -27,39 +25,44 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { productId, jumlah, hargaSatuan, date, diskon } = body;
+    const { variantId, jumlah, hargaSatuan, date, diskon } = body;
 
-    if (!productId || jumlah <= 0 || !hargaSatuan) {
+    if (!variantId || jumlah <= 0 || !hargaSatuan) {
       return NextResponse.json(
         { error: "Data tidak lengkap atau jumlah ≤ 0" },
         { status: 400 }
       );
     }
 
-    // 1. Kurangi stok
-    const product = await prisma.product.update({
-      where: { id: Number(productId) },
+    // Kurangi stok varian
+    const variant = await prisma.productVariant.update({
+      where: { id: Number(variantId) },
       data: { stok: { decrement: Number(jumlah) } },
     });
 
-    if (product.stok < 0) {
-      // rollback jika stok jadi minus
-      await prisma.product.update({
-        where: { id: Number(productId) },
+    if (variant.stok < 0) {
+      // rollback kalau stok minus
+      await prisma.productVariant.update({
+        where: { id: Number(variantId) },
         data: { stok: { increment: Number(jumlah) } },
       });
       return NextResponse.json({ error: "Stok tidak cukup" }, { status: 400 });
     }
 
-    // 2. Simpan transaksi
+    // Simpan transaksi
     const transaksi = await prisma.transaksi.create({
       data: {
-        productId: Number(productId),
+        variantId: Number(variantId),
         jumlah: Number(jumlah),
         diskon: diskon ? Number(diskon) : 0,
         hargaSatuan: Number(hargaSatuan),
         date: date ? new Date(date) : new Date(),
       },
+      include: {
+        productVariant: {
+          include: { product: true }
+        }
+      }
     });
 
     return NextResponse.json(transaksi, { status: 201 });
@@ -68,3 +71,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Transaksi gagal" }, { status: 500 });
   }
 }
+
