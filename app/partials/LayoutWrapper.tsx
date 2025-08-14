@@ -13,8 +13,9 @@ export default function LayoutWrapper({
 
 const isAuthPage = pathname === "/login";
 const isPrintPage = pathname.startsWith("/produk/print");
+const isPrintTransaksiPage = pathname.startsWith("/transaksi/print");
 
-if (isAuthPage || isPrintPage) {
+if (isAuthPage || isPrintPage || isPrintTransaksiPage) {
   return <>{children}</>;
 }
 

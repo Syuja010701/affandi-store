@@ -17,6 +17,7 @@ import { createRupiahHandler, formatRupiah } from "@/lib/currency";
 import * as XLSX from "sheetjs-style";
 import { Button } from "flowbite-react";
 import DatePicker from "../components/input/DatePicker";
+import Link from "next/link";
 
 export default function TransaksiPage() {
   const {
@@ -221,6 +222,12 @@ export default function TransaksiPage() {
         >
           Delete
         </button>
+        <Link
+          target="_blank"
+          href={`/transaksi/print/${t.id}`}
+        >
+          Print
+        </Link>
       </div>
     ),
   }));
