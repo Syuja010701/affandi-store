@@ -11,6 +11,7 @@ export default function PrintPage() {
     if (!dataPrint && params?.id) {
       printTransaksi(Number(params.id));
     }
+    window.print();
   }, [dataPrint, params, printTransaksi]);
 
   return (
@@ -19,12 +20,29 @@ export default function PrintPage() {
       {dataPrint ? (
         <div className="p-4 border rounded shadow-md">
           <h2 className="text-xl font-semibold mb-2">Detail Transaksi</h2>
-          <p><strong>ID:</strong> {dataPrint.id}</p>
-          <p><strong>Nama:</strong> {dataPrint.productVariant?.product?.nama}</p>
-          <p><strong>Total:</strong> {dataPrint.hargaSatuan}</p>
+          <p>
+            <strong>ID:</strong> {dataPrint.id}
+          </p>
+          <p>
+            <strong>Nama:</strong> {dataPrint.productVariant?.product?.nama}
+          </p>
+          <p>
+            <strong>Total:</strong> {dataPrint.hargaSatuan}
+          </p>
         </div>
       ) : (
-        <p className="text-red-500">Memuat data transaksi...</p>
+        <div className="p-4 border rounded shadow-md">
+          <h2 className="text-xl font-semibold mb-2">Detail Transaksi</h2>
+          <p>
+            <strong>ID:</strong> .id
+          </p>
+          <p>
+            <strong>Nama:</strong> productVarian?.product?.nama
+          </p>
+          <p>
+            <strong>Total:</strong> .hargaSatuan
+          </p>
+        </div>
       )}
     </div>
   );
