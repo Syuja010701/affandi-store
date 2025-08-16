@@ -20,7 +20,12 @@ export async function GET(
       where: { id },
       include: { productVariant: 
         {
-          include: { product: true }
+          include: { product: {
+            include: {
+              jenis: true,
+              kategoriUmur: true
+            }
+          } }
         }
        },
     });
