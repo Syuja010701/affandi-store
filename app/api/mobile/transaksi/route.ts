@@ -25,10 +25,21 @@ export async function POST(req: NextRequest) {
           hargaSatuan: Number(hargaSatuan),
           date: date ? new Date(date) : new Date(),
         },
+        include: {
+          productVariant: {
+            include: {
+              product: {
+                include: {
+                  jenis: true,
+                  kategoriUmur: true,
+                },
+              },
+            },
+          },
+        },
       });
     });
 
-    // Jalankan semua create sekaligus
     const result = await prisma.$transaction(queries);
 
     return NextResponse.json(result, { status: 201 });

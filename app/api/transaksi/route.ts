@@ -8,15 +8,15 @@ export async function GET() {
   const list = await prisma.transaksi.findMany({
     include: {
       productVariant: {
-        include: { product: 
-          {
+        include: {
+          product: {
             include: {
               jenis: true,
               kategoriUmur: true,
-            }
-          }
-         }
-      }
+            },
+          },
+        },
+      },
     },
   });
   return NextResponse.json(list);
@@ -60,10 +60,18 @@ export async function POST(req: NextRequest) {
       },
       include: {
         productVariant: {
-          include: { product: true }
-        }
-      }
+          include: {
+            product: {
+              include: {
+                jenis: true,
+                kategoriUmur: true,
+              },
+            },
+          },
+        },
+      },
     });
+    console.log(JSON.stringify(transaksi, null, 2));
 
     return NextResponse.json(transaksi, { status: 201 });
   } catch (err) {
@@ -71,4 +79,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Transaksi gagal" }, { status: 500 });
   }
 }
-

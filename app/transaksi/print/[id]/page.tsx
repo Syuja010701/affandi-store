@@ -74,13 +74,13 @@ export default function PrintPage() {
           <p>Total: .hargaSatuan</p>
         </div>
       )}
-
+  {/* @page {
+            size: 58mm auto; 
+            margin: 2mm;
+          } */}
       <style jsx>{`
         @media print {
-          @page {
-            size: 58mm auto; /* lebar 58mm, panjang menyesuaikan */
-            margin: 2mm;
-          }
+        
           body {
             margin: 0;
             font-size: 10pt;
