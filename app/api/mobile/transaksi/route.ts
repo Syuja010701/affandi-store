@@ -10,41 +10,61 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Data harus array" }, { status: 400 });
     }
 
-    const queries = body.map((item) => {
-      const { variantId, jumlah, hargaSatuan, date, diskon } = item;
+    const result = await prisma.$transaction(async (tx) => {
+      const transaksiList = [];
 
-      if (!variantId || jumlah <= 0 || !hargaSatuan) {
-        throw new Error("Data tidak lengkap atau jumlah ≤ 0");
-      }
+      for (const item of body) {
+        const { variantId, jumlah, hargaSatuan, date, diskon } = item;
 
-      return prisma.transaksi.create({
-        data: {
-          variantId: Number(variantId),
-          jumlah: Number(jumlah),
-          diskon: diskon ? Number(diskon) : 0,
-          hargaSatuan: Number(hargaSatuan),
-          date: date ? new Date(date) : new Date(),
-        },
-        include: {
-          productVariant: {
-            include: {
-              product: {
-                include: {
-                  jenis: true,
-                  kategoriUmur: true,
+        if (!variantId || jumlah <= 0 || !hargaSatuan) {
+          throw new Error("Data tidak lengkap atau jumlah ≤ 0");
+        }
+
+        // Kurangi stok varian
+        const variant = await tx.productVariant.update({
+          where: { id: Number(variantId) },
+          data: { stok: { decrement: Number(jumlah) } },
+        });
+
+        if (variant.stok < 0) {
+          throw new Error(`Stok tidak cukup untuk variantId ${variantId}`);
+        }
+
+        // Simpan transaksi
+        const transaksi = await tx.transaksi.create({
+          data: {
+            variantId: Number(variantId),
+            jumlah: Number(jumlah),
+            diskon: diskon ? Number(diskon) : 0,
+            hargaSatuan: Number(hargaSatuan),
+            date: date ? new Date(date) : new Date(),
+          },
+          include: {
+            productVariant: {
+              include: {
+                product: {
+                  include: {
+                    jenis: true,
+                    kategoriUmur: true,
+                  },
                 },
               },
             },
           },
-        },
-      });
-    });
+        });
 
-    const result = await prisma.$transaction(queries);
+        transaksiList.push(transaksi);
+      }
+
+      return transaksiList;
+    });
 
     return NextResponse.json(result, { status: 201 });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message || "Transaksi gagal" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Transaksi gagal" },
+      { status: 500 }
+    );
   }
 }
