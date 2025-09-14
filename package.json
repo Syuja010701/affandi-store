@@ -13,6 +13,7 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.12.0",
     "@prisma/extension-accelerate": "^1.2.1",
+    "apexcharts": "^5.3.5",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -24,6 +25,7 @@
     "next-auth": "^4.24.11",
     "next-qrcode": "^2.5.1",
     "react": "^19.0.0",
+    "react-apexcharts": "^1.7.0",
     "react-dom": "^19.0.0",
     "sheetjs-style": "^0.15.8",
     "zustand": "^5.0.6"
