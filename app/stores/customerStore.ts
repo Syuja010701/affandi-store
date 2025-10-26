@@ -12,10 +12,14 @@ interface Customer {
 
 interface CustomerState {
   items: Customer[];
+  item: Customer | null;
   isLoading: boolean;
 
   fetchItems: () => Promise<void>;
   addItem: (payload: Omit<Customer, "id">) => Promise<void>;
+  searchItemByPhone: (phone: string) => Promise<void>;
+
+  message: string | null;
   updateItem: (
     id: number,
     patch: Partial<Omit<Customer, "id">>
@@ -25,8 +29,31 @@ interface CustomerState {
 
 export const useCustomerStore = create<CustomerState>((set) => ({
   items: [],
+  item: null,
+  message: null,
   isLoading: false,
 
+  searchItemByPhone: async (phone) => {
+    set({ isLoading: true });
+    try {
+      const res = await fetch(`/api/customer/phone/${phone}`);
+
+      if (res.status === 404) {
+        set({ item: null, message: "Customer not found" });
+        return;
+      }
+
+      if (res.ok) {
+        const data: Customer = await res.json();
+        set({ item: data, message: null });
+      }
+    } catch (err) {
+      console.error("Failed to fetch customer", err);
+      set({ message: "Error fetching customer" });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
   fetchItems: async () => {
     set({ isLoading: true });
     try {

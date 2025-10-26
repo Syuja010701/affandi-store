@@ -43,49 +43,85 @@ export async function PUT(
 ) {
   try {
     const id = await parseId(params);
-    const { jumlah: newJumlah, hargaSatuan, date, diskon } = await req.json();
+    const {
+      jumlah: newJumlah,
+      hargaSatuan,
+      date,
+      diskon,
+      name,
+      phone,
+      address,
+    } = await req.json();
 
     // Ambil transaksi lama
     const oldTx = await prisma.transaksi.findUnique({
       where: { id },
-      select: { jumlah: true, variantId: true }
+      include: { customer: true },
     });
 
     if (!oldTx)
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json({ error: "Transaksi tidak ditemukan" }, { status: 404 });
 
-    const delta = newJumlah - oldTx.jumlah;
+    let customer = null;
+    if (phone) {
+      customer = await prisma.customer.findUnique({ where: { phone } });
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: {
+            name: name || "Tanpa Nama",
+            phone,
+            address: address || null,
+          },
+        });
+      }
+    }
+    // --- 2. Hitung selisih jumlah untuk update stok varian ---
+    const oldJumlah = oldTx.jumlah;
+    const delta = newJumlah - oldJumlah;
 
-    // Update stok varian sesuai perubahan jumlah
     const variant = await prisma.productVariant.update({
       where: { id: oldTx.variantId },
-      data: { stok: { decrement: delta } }
+      data: { stok: { decrement: delta } },
     });
 
     if (variant.stok < 0) {
       // rollback stok kalau minus
       await prisma.productVariant.update({
         where: { id: oldTx.variantId },
-        data: { stok: { increment: delta } }
+        data: { stok: { increment: delta } },
       });
       return NextResponse.json({ error: "Stok tidak cukup" }, { status: 400 });
     }
 
-    // Update transaksi
+    // --- 3. Update transaksi ---
     const updated = await prisma.transaksi.update({
       where: { id },
       data: {
-        jumlah: newJumlah,
-        diskon: diskon ?? 0,
-        date: date ? new Date(date) : new Date(),
-        hargaSatuan: hargaSatuan ? Number(hargaSatuan) : undefined
-      }
+        jumlah: Number(newJumlah),
+        hargaSatuan: hargaSatuan ? Number(hargaSatuan) : oldTx.hargaSatuan,
+        diskon: diskon ? Number(diskon) : oldTx.diskon,
+        date: date ? new Date(date) : oldTx.date,
+        customerId: customer ? customer.id : oldTx.customerId,
+      },
+      include: {
+        customer: true,
+        productVariant: {
+          include: {
+            product: {
+              include: {
+                jenis: true,
+                kategoriUmur: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     return NextResponse.json(updated);
   } catch (err) {
     console.error("PUT /api/transaksi error:", err);
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    return NextResponse.json({ error: "Update gagal" }, { status: 500 });
   }
 }
 
