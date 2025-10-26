@@ -4,9 +4,11 @@ import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+/* ---------------- GET ---------------- */
 export async function GET() {
   const list = await prisma.transaksi.findMany({
     include: {
+      customer: true,
       productVariant: {
         include: {
           product: {
@@ -18,14 +20,25 @@ export async function GET() {
         },
       },
     },
+    orderBy: { id: "desc" },
   });
   return NextResponse.json(list);
 }
 
+/* ---------------- POST ---------------- */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { variantId, jumlah, hargaSatuan, date, diskon } = body;
+    const {
+      variantId,
+      jumlah,
+      hargaSatuan,
+      date,
+      diskon,
+      name,
+      phone,
+      address,
+    } = body;
 
     if (!variantId || jumlah <= 0 || !hargaSatuan) {
       return NextResponse.json(
@@ -34,7 +47,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Kurangi stok varian
+    // --- 1. Cek customer ---
+    let customer = null;
+    if (phone) {
+      customer = await prisma.customer.findUnique({ where: { phone } });
+      if (!customer) {
+        customer = await prisma.customer.create({
+          data: {
+            name: name || "Tanpa Nama",
+            phone,
+            address: address || null,
+          },
+        });
+      }
+    }
+
+    // --- 2. Kurangi stok varian ---
     const variant = await prisma.productVariant.update({
       where: { id: Number(variantId) },
       data: { stok: { decrement: Number(jumlah) } },
@@ -49,7 +77,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Stok tidak cukup" }, { status: 400 });
     }
 
-    // Simpan transaksi
+    // --- 3. Simpan transaksi ---
     const transaksi = await prisma.transaksi.create({
       data: {
         variantId: Number(variantId),
@@ -57,8 +85,10 @@ export async function POST(req: NextRequest) {
         diskon: diskon ? Number(diskon) : 0,
         hargaSatuan: Number(hargaSatuan),
         date: date ? new Date(date) : new Date(),
+        customerId: customer ? customer.id : null,
       },
       include: {
+        customer: true,
         productVariant: {
           include: {
             product: {
@@ -71,7 +101,6 @@ export async function POST(req: NextRequest) {
         },
       },
     });
-    console.log(JSON.stringify(transaksi, null, 2));
 
     return NextResponse.json(transaksi, { status: 201 });
   } catch (err) {

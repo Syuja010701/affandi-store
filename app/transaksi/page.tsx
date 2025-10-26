@@ -9,6 +9,7 @@ import BaseSelect from "../components/input/BaseSelect";
 import BaseModal from "../components/modal/baseModal";
 
 import { useTransaksiStore } from "../stores/transaksiStore";
+import { useCustomerStore } from "../stores/customerStore";
 import { useProductStore } from "../stores/produkStore";
 import { useJenisProdukStore } from "../stores/jenisProdukStore";
 import { useKategoriUmurStore } from "../stores/kategoriUmurStore";
@@ -18,6 +19,7 @@ import * as XLSX from "sheetjs-style";
 import { Button } from "flowbite-react";
 import DatePicker from "../components/input/DatePicker";
 import Link from "next/link";
+import BaseTextarea from "../components/input/BaseTextArea";
 
 export default function TransaksiPage() {
   const {
@@ -28,6 +30,12 @@ export default function TransaksiPage() {
     deleteItem,
     isLoading: loadingTrx,
   } = useTransaksiStore();
+
+  // store customer (for future use)
+  const {
+    searchItemByPhone,
+    message: messageErr,
+  } = useCustomerStore();
 
   const handleExportExcel = () => {
     const rows = filtered.map((t) => ({
@@ -81,6 +89,9 @@ export default function TransaksiPage() {
   const [kategoriFilter, setKategoriFilter] = useState("");
 
   /* form fields */
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [produkId, setProdukId] = useState("");
   const [produkVariantId, setProdukVariantId] = useState("");
   const [jumlah, setJumlah] = useState(1);
@@ -140,12 +151,15 @@ export default function TransaksiPage() {
 
   const handleEdit = (row: any) => {
     setId(row.id);
+    setName(row.customer?.name || "");
+    setPhone(row.customer?.phone || "");
+    setAddress(row.customer?.address || "");
     setProdukId(String(row.variantId));
     setJumlah(row.jumlah);
     setHargaSatuan(String(row.hargaSatuan));
     setDiskon(String(row.diskon ?? ""));
     setDate(formatDateToYMD(new Date(row.date)));
-    setTitleModal(`Edit Transaksi #${row.id}`);
+    setTitleModal(`Edit Transaksi `);
     setOpen(true);
   };
 
@@ -162,6 +176,9 @@ export default function TransaksiPage() {
       variantId: Number(produkVariantId),
       jumlah,
       date,
+      phone: phone || null,
+      name: name || null,
+      address: address || null,
       diskon: disc,
       hargaSatuan: hs,
     };
@@ -184,6 +201,9 @@ export default function TransaksiPage() {
 
   /* ------------- kolom tabel ------------- */
   const columns = [
+    { key: "name", header: "Name" },
+    { key: "phone", header: "Phone" },
+    { key: "address", header: "Address" },
     { key: "produk", header: "Produk" },
     { key: "jenis", header: "Jenis" },
     { key: "kategori", header: "Kategori" },
@@ -198,6 +218,9 @@ export default function TransaksiPage() {
 
   const data = filtered.map((t) => ({
     ...t,
+    name: t.customer?.name ?? "-",
+    phone: t.customer?.phone ?? "-",
+    address: t.customer?.address ?? "-",
     produk: t.productVariant?.product?.nama ?? "-",
     jenis: t.productVariant?.product?.jenis?.name ?? "-",
     ukuran: t.productVariant?.ukuran ?? "-",
@@ -222,10 +245,7 @@ export default function TransaksiPage() {
         >
           Delete
         </button>
-        <Link
-          target="_blank"
-          href={`/transaksi/print/${t.id}`}
-        >
+        <Link target="_blank" href={`/transaksi/print/${t.id}`}>
           Print
         </Link>
       </div>
@@ -293,7 +313,6 @@ export default function TransaksiPage() {
               ))}
             </BaseSelect>
           </FilterLayout>
-
           <BaseTable columns={columns} data={data} />
 
           <BaseModal
@@ -314,6 +333,66 @@ export default function TransaksiPage() {
             }}
           >
             <div className="grid gap-4">
+              <div className="flex items-end gap-2">
+                <BaseInput
+                  label="Phone"
+                  type="text"
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+
+                <Button
+                  onClick={async () => {
+                    if (!phone)
+                      return alert("Masukkan nomor HP terlebih dahulu");
+
+                    try {
+                      await searchItemByPhone(phone);
+
+                      const { item } = useCustomerStore.getState();
+
+                      if (item) {
+                        setName(item.name || "");
+                        setAddress(item.address || "");
+                      } else {
+                        setName("");
+                        setAddress("");
+                      }
+                    } catch (error) {
+                      console.error(error);
+                      setName("");
+                      setAddress("");
+                    }
+
+                    if (messageErr) {
+                      setTimeout(() => {
+                        useCustomerStore.setState({ message: "" });
+                      }, 5000);
+                    }
+                  }}
+                  color="blue"
+                >
+                  Cari Customer
+                </Button>
+              </div>
+              {messageErr && (
+                <span className="text-sm text-red-500 ms-3">{messageErr}</span>
+              )}
+
+              <BaseInput
+                label="Name"
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <BaseTextarea
+                label="Address"
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
               <BaseSelect
                 label="Produk"
                 id="produk"

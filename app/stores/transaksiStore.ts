@@ -1,10 +1,17 @@
 import { create } from "zustand";
+
 interface Transaksi {
   id: number;
   variantId: number;
   jumlah: number;
   hargaSatuan: number | string;
   diskon?: number | string;
+  customer?: {
+    id: number;
+    name: string;
+    phone?: string;
+    address?: string;
+  };
   date?: string;
   productVariant?: {
     id: number;
@@ -38,15 +45,12 @@ interface TransaksiState {
 
   fetchItems: () => Promise<void>;
   addItem: (payload: Omit<Transaksi, "id">) => Promise<void>;
-  updateItem: (
-    id: number,
-    patch: Partial<Omit<Transaksi, "id">>
-  ) => Promise<void>;
+  updateItem: (id: number, patch: Partial<Omit<Transaksi, "id">>) => Promise<void>;
   deleteItem: (id: number) => Promise<void>;
   printTransaksi: (id: number) => Promise<void>;
 }
 
-export const useTransaksiStore = create<TransaksiState>((set, get) => ({
+export const useTransaksiStore = create<TransaksiState>((set) => ({
   items: [],
   isLoading: false,
   dataPrint: null,
@@ -55,10 +59,11 @@ export const useTransaksiStore = create<TransaksiState>((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await fetch("/api/transaksi");
+      if (!res.ok) throw new Error("Gagal fetch data transaksi");
       const data: Transaksi[] = await res.json();
       set({ items: data });
     } catch (err) {
-      console.error("Failed to fetch transaksi", err);
+      console.error("Failed to fetch transaksi:", err);
     } finally {
       set({ isLoading: false });
     }
@@ -72,11 +77,20 @@ export const useTransaksiStore = create<TransaksiState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const created: Transaksi = await res.json();
-      set((state) => ({ items: [created, ...state.items] }));
-      get().fetchItems();
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        console.error(result.error || "Gagal tambah transaksi");
+        return;
+      }
+
+      // Tambahkan langsung ke list tanpa fetch ulang
+      set((state) => ({
+        items: [result, ...state.items],
+      }));
     } catch (err) {
-      console.error("Failed to add transaksi", err);
+      console.error("Failed to add transaksi:", err);
     } finally {
       set({ isLoading: false });
     }
@@ -90,13 +104,19 @@ export const useTransaksiStore = create<TransaksiState>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(patch),
       });
-      const updated: Transaksi = await res.json();
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        console.error(result.error || "Gagal update transaksi");
+        return;
+      }
+
       set((state) => ({
-        items: state.items.map((t) => (t.id === id ? updated : t)),
+        items: state.items.map((t) => (t.id === id ? result : t)),
       }));
-      get().fetchItems();
     } catch (err) {
-      console.error("Failed to update transaksi", err);
+      console.error("Failed to update transaksi:", err);
     } finally {
       set({ isLoading: false });
     }
@@ -105,17 +125,20 @@ export const useTransaksiStore = create<TransaksiState>((set, get) => ({
   deleteItem: async (id) => {
     set({ isLoading: true });
     try {
-      await fetch(`/api/transaksi/${id}`, { method: "DELETE" });
-      set((state) => ({ items: state.items.filter((t) => t.id !== id) }));
-      get().fetchItems();
+      const res = await fetch(`/api/transaksi/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal hapus transaksi");
+
+      set((state) => ({
+        items: state.items.filter((t) => t.id !== id),
+      }));
     } catch (err) {
-      console.error("Failed to delete transaksi", err);
+      console.error("Failed to delete transaksi:", err);
     } finally {
       set({ isLoading: false });
     }
   },
 
-  printTransaksi: async (id: number) => {
+  printTransaksi: async (id) => {
     try {
       const res = await fetch(`/api/transaksi/${id}`);
       if (!res.ok) throw new Error("Gagal mengambil data transaksi");

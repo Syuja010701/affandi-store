@@ -1,7 +1,7 @@
 "use client";
 
 import { initFlowbite } from "flowbite";
-import { ArrowsRepeat, Expand } from "flowbite-react-icons/outline";
+import { ArrowsRepeat, Expand, Users } from "flowbite-react-icons/outline";
 import {
   ChartPie,
   ClipboardCheck,
@@ -30,6 +30,7 @@ export default function Sidebar() {
     { path: "/transaksi", icon: <ArrowsRepeat />, name: "Transaksi" },
     { path: "/expense", icon: <Expand />, name: "Expanses" },
     { path: "/report-daily", icon: <ClipboardCheck />, name: "Report Daily" },
+    { path: "/customer", icon: <Users />, name: "Customers" },
 
   ];
 
